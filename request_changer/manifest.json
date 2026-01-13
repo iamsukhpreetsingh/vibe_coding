@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Request Manipulator",
+  "version": "1.0",
+  "description": "Manipulate HTTP request headers including User-Agent",
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Request Manipulator"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Domain History Cleaner",
+  "version": "1.0",
+  "description": "Delete browser history by domain",
+  "permissions": [
+    "history",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Clean History by Domain"
+  }
+}

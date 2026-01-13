@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 350px;
+      min-height: 400px;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      margin: 0;
+    }
+    
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    h1 {
+      font-size: 22px;
+      margin: 0 0 20px 0;
+      text-align: center;
+      font-weight: 300;
+    }
+    
+    .input-section {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    input[type="text"]:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      margin-right: 10px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(45deg, #4CAF50, #45a049);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .keyword-list {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 15px;
+    }
+    
+    .keyword-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .keyword-item:last-child {
+      border-bottom: none;
+    }
+    
+    .keyword-text {
+      flex: 1;
+      font-size: 14px;
+    }
+    
+    .btn-remove {
+      background: linear-gradient(45deg, #f44336, #d32f2f);
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .btn-remove:hover {
+      background: linear-gradient(45deg, #d32f2f, #c62828);
+    }
+    
+    .status-message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .status-success {
+      background: rgba(76, 175, 80, 0.3);
+      border: 1px solid rgba(76, 175, 80, 0.5);
+    }
+    
+    .status-error {
+      background: rgba(244, 67, 54, 0.3);
+      border: 1px solid rgba(244, 67, 54, 0.5);
+    }
+    
+    .stats {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .button-group button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛡️ Keyword Blocker</h1>
+    
+    <div class="input-section">
+      <label for="keywordInput">Add New Keyword:</label>
+      <input type="text" id="keywordInput" placeholder="Enter keyword to block...">
+      <div class="button-group">
+        <button id="addKeyword" class="btn btn-primary">Add Keyword</button>
+        <button id="clearAll" class="btn btn-secondary">Clear All</button>
+      </div>
+    </div>
+    
+    <div class="keyword-list" id="keywordList">
+      <!-- Keywords will be populated here -->
+    </div>
+    
+    <div class="stats" id="stats">
+      <!-- Statistics will be shown here -->
+    </div>
+    
+    <div id="statusMessage" class="status-message" style="display: none;"></div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
