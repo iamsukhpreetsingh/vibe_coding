@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CloudVault</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080c10;--s1:#0e1318;--s2:#141b22;--s3:#1c252f;--border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);--text:#e8edf2;--muted:#5a6978;--muted2:#8896a4;--accent:#00d4ff;--green:#00e87a;--red:#ff4d6a;--orange:#ff9d42;--purple:#b06aff;--yellow:#ffd742}
+*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;min-height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
+/* AUTH */
+#auth-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:500;background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(0,212,255,.08),transparent 60%),var(--bg)}
+.auth-card{background:var(--s1);border:1px solid var(--border2);border-radius:20px;padding:44px 40px;width:400px;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#0099cc);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.brand-icon svg{width:17px;height:17px}
+.brand-name{font-family:'Cabinet Grotesk',sans-serif;font-size:19px;font-weight:800}
+.brand-name em{color:var(--accent);font-style:normal}
+.auth-tabs{display:flex;background:var(--s2);border-radius:9px;padding:4px;margin-bottom:24px}
+.auth-tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--muted2);transition:all .2s}
+.auth-tab.active{background:var(--s3);color:var(--text)}
+.auth-form h2{font-family:'Cabinet Grotesk',sans-serif;font-size:21px;font-weight:700;margin-bottom:4px}
+.auth-form>p{font-size:13px;color:var(--muted2);margin-bottom:20px;line-height:1.5}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.7px}
+.field input,.field select,.field textarea{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:10px 13px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;border-radius:8px;font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#000;width:100%}.btn-primary:hover{background:#33ddff;transform:translateY(-1px)}.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted2)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(255,77,106,.12);border:1px solid rgba(255,77,106,.25);color:var(--red)}.btn-danger:hover{background:rgba(255,77,106,.22)}
+.btn-green{background:var(--green);color:#000;width:100%}.btn-green:hover{background:#33ffaa;transform:translateY(-1px)}.btn-green:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-sm{padding:5px 10px;font-size:12px}.btn-xs{padding:3px 8px;font-size:11px}
+.btn-icon{padding:5px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--muted2);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center}.btn-icon:hover{border-color:var(--accent);color:var(--accent)}.btn-icon svg{width:12px;height:12px;display:block}
+.err-box{background:rgba(255,77,106,.1);border:1px solid rgba(255,77,106,.25);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--red);margin-bottom:12px;display:none}
+.ok-box{background:rgba(0,232,122,.1);border:1px solid rgba(0,232,122,.25);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--green);margin-bottom:12px;display:none}
+/* APP */
+#app{height:100vh;display:none;flex-direction:column}
+.topbar{height:52px;background:rgba(8,12,16,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:14px;flex-shrink:0;z-index:100}
+.bc{display:flex;align-items:center;gap:5px;font-size:13px;flex:1;overflow:hidden}
+.bc-item{color:var(--muted2);cursor:pointer;transition:color .15s;white-space:nowrap;flex-shrink:0}.bc-item:hover{color:var(--accent)}.bc-item.cur{color:var(--text);cursor:default}.bc-sep{color:var(--muted);flex-shrink:0}
+.topbar-right{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.user-chip{display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--border);border-radius:18px;padding:4px 11px 4px 5px;font-size:12px;cursor:pointer;transition:border-color .2s}.user-chip:hover{border-color:var(--accent)}
+.avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Cabinet Grotesk',sans-serif;color:#000;flex-shrink:0}
+/* LAYOUT */
+.body-wrap{display:flex;flex:1;overflow:hidden}
+.sidebar{width:210px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-sect{padding:14px 10px 6px}
+.sb-label{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:6px}
+.sb-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--muted2);transition:all .15s;user-select:none}
+.sb-item:hover{background:var(--s2);color:var(--text)}.sb-item.active{background:rgba(0,212,255,.08);color:var(--accent)}
+.sb-item svg{width:15px;height:15px;flex-shrink:0}.acct-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+/* TOOLBAR */
+.toolbar{padding:10px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.toolbar-left{display:flex;align-items:center;gap:7px;flex:1;min-width:0;flex-wrap:wrap}
+.search-wrap{position:relative;min-width:180px;max-width:280px;flex:1}
+.search-wrap input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:7px 11px 7px 30px;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);width:13px;height:13px}
+/* SORT/FILTER ROW */
+.sort-row{padding:7px 16px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:rgba(8,12,16,.5)}
+.sort-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);color:var(--muted2);transition:all .15s;white-space:nowrap}
+.sort-chip:hover{border-color:var(--accent);color:var(--accent)}.sort-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.08)}
+.sort-chip .arr{font-size:9px}
+.filter-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid;transition:all .15s}
+.sep-v{width:1px;height:18px;background:var(--border);flex-shrink:0}
+.view-btns{display:flex;background:var(--s2);border:1px solid var(--border);border-radius:6px;overflow:hidden;flex-shrink:0}
+.vbtn{padding:6px 8px;cursor:pointer;color:var(--muted2);transition:all .15s}.vbtn.active,.vbtn:hover{background:var(--s3);color:var(--text)}.vbtn svg{width:13px;height:13px;display:block}
+/* SEL BAR */
+.sel-bar{background:rgba(0,212,255,.07);border-bottom:1px solid rgba(0,212,255,.15);padding:8px 16px;display:none;align-items:center;gap:10px;font-size:13px;flex-shrink:0}
+.sel-bar.show{display:flex}.sel-bar strong{color:var(--accent);font-family:'Cabinet Grotesk',sans-serif}
+/* FILE AREA */
+.file-area{flex:1;overflow-y:auto;padding:14px 16px;position:relative}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px}
+.file-list{display:flex;flex-direction:column;gap:1px}
+/* GRID CARD */
+.fc{background:var(--s1);border:1px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .2s;animation:fi .25s ease both;position:relative;user-select:none}
+.fc:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}.fc.selected{border-color:var(--accent);background:rgba(0,212,255,.05)}
+.fc.drag-over{border-color:var(--green)!important;background:rgba(0,232,122,.06)!important;transform:scale(1.03)!important}.fc.dragging{opacity:.35}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.c-thumb{aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative}
+.c-folder{background:linear-gradient(135deg,#1a2535,#151e2a)}.c-video{background:linear-gradient(135deg,#1a1535,#120e22)}.c-image{background:linear-gradient(135deg,#0f1f18,#0d1a14)}.c-audio{background:linear-gradient(135deg,#1f1a0d,#1a1508)}.c-file{background:linear-gradient(135deg,#151520,#101018)}
+.c-check{position:absolute;top:6px;left:6px;width:18px;height:18px;border-radius:5px;border:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;opacity:0;transition:opacity .15s}
+.fc:hover .c-check,.fc.selected .c-check{opacity:1}.fc.selected .c-check{background:var(--accent);border-color:var(--accent);color:#000}
+.c-info{padding:8px 10px}.c-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.c-meta{display:flex;align-items:center;gap:4px;font-size:9px;flex-wrap:wrap}.c-date{font-size:9px;color:var(--muted);margin-top:1px}
+.ab{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;white-space:nowrap}
+/* LIST */
+.fl-hdr{display:grid;grid-template-columns:20px 24px 1fr 90px 90px 90px 56px;gap:8px;padding:6px 9px;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);margin-bottom:2px}
+.fl-row{display:grid;grid-template-columns:20px 24px 1fr 90px 90px 90px 56px;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;cursor:pointer;transition:all .15s;animation:fi .2s ease both;user-select:none}
+.fl-row:hover{background:var(--s2)}.fl-row.selected{background:rgba(0,212,255,.06)}
+.fl-row.drag-over{background:rgba(0,232,122,.08);outline:1px solid var(--green);outline-offset:-1px}.fl-row.dragging{opacity:.35}
+.fl-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:10px}
+.fl-row:hover .fl-check,.fl-row.selected .fl-check{border-color:var(--accent)}.fl-row.selected .fl-check{background:var(--accent);border-color:var(--accent);color:#000}
+.fl-icon{font-size:16px;text-align:center}.fl-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-size{font-size:11px;color:var(--muted2);text-align:right}.fl-date{font-size:10px;color:var(--muted2)}
+.fl-act{display:flex;gap:3px;opacity:0;transition:opacity .15s;justify-content:flex-end}.fl-row:hover .fl-act{opacity:1}
+.tag{font-size:9px;font-weight:600;padding:2px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.3px}
+.tag-video{background:rgba(176,106,255,.12);color:var(--purple)}.tag-image{background:rgba(0,232,122,.1);color:var(--green)}.tag-audio{background:rgba(255,215,66,.1);color:var(--yellow)}.tag-folder{background:rgba(0,212,255,.1);color:var(--accent)}.tag-file{background:var(--s3);color:var(--muted2)}.tag-archive{background:rgba(255,157,66,.1);color:var(--orange)}
+/* STORAGE BARS */
+.stor-card{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:7px}
+.stor-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:11px}
+.stor-bar{height:3px;background:var(--s3);border-radius:2px;overflow:hidden}.stor-fill{height:100%;border-radius:2px;transition:width .5s}
+/* PANELS */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.panel{background:var(--s1);border:1px solid var(--border2);border-radius:16px;box-shadow:0 40px 80px rgba(0,0,0,.7);animation:su .22s ease;max-height:92vh;overflow-y:auto;width:460px}
+.panel.wide{width:560px}.panel.narrow{width:360px}.panel.profile-w{width:620px}
+@keyframes su{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.ph{padding:20px 22px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--s1);z-index:1}
+.ph h3{font-family:'Cabinet Grotesk',sans-serif;font-size:17px;font-weight:700}
+.pc{background:none;border:none;color:var(--muted2);cursor:pointer;padding:4px;border-radius:5px;transition:color .15s;display:flex}.pc:hover{color:var(--text)}.pc svg{width:17px;height:17px}
+.pb{padding:18px 22px 22px}.sep{height:1px;background:var(--border);margin:14px 0}
+/* PROFILE */
+.profile-tabs{display:flex;gap:2px;background:var(--s2);border-radius:9px;padding:4px;margin-bottom:18px}
+.profile-tab{flex:1;padding:7px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;border-radius:6px;color:var(--muted2);transition:all .2s}
+.profile-tab.active{background:var(--s3);color:var(--text)}
+.avatar-big{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;font-family:'Cabinet Grotesk',sans-serif;color:#000;flex-shrink:0;border:3px solid rgba(255,255,255,.1)}
+.color-swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .15s;border:2px solid transparent}.swatch:hover{transform:scale(1.2)}.swatch.active{border-color:white;transform:scale(1.1)}
+.cred-row{background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;margin-bottom:8px}
+.cred-field{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px}
+.cred-val{font-family:monospace;font-size:12px;color:var(--muted2);letter-spacing:.5px;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0 8px}
+.cred-eye{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;font-size:13px;flex-shrink:0;transition:color .15s}.cred-eye:hover{color:var(--accent)}
+/* UPLOAD */
+.up-zone{border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;transition:all .2s;cursor:pointer;margin-bottom:14px}
+.up-zone:hover,.up-zone.drag{border-color:var(--accent);background:rgba(0,212,255,.04)}
+.up-zone .emoji{font-size:28px;margin-bottom:6px}.up-zone p{font-size:13px;color:var(--muted2);margin-bottom:2px}.up-zone span{font-size:11px;color:var(--muted)}
+.up-list{display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto}
+.up-item{background:var(--s2);border-radius:7px;padding:8px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.up-item-name{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.up-prog{height:3px;background:var(--s3);border-radius:2px;margin-top:4px;overflow:hidden;width:100%}
+.up-prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+/* ROUTE */
+.route-cards{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.route-card{background:var(--s2);border:2px solid var(--border);border-radius:10px;padding:11px 13px;cursor:pointer;transition:all .2s;display:flex;align-items:flex-start;gap:10px}
+.route-card:hover{border-color:var(--border2)}.route-card.selected{border-color:var(--accent);background:rgba(0,212,255,.05)}
+.route-info{flex:1;min-width:0}.route-name{font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:700;margin-bottom:1px;display:flex;align-items:center;gap:7px}
+.route-meta{font-size:11px;color:var(--muted2);margin-bottom:4px}
+.route-bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}.route-fill{height:100%;border-radius:2px;transition:width .5s}
+.rec-badge{font-size:9px;font-weight:700;color:var(--green);background:rgba(0,232,122,.12);border:1px solid rgba(0,232,122,.2);padding:2px 6px;border-radius:4px}
+.cant-fit{opacity:.45;cursor:not-allowed!important}
+/* TREE */
+.tree-wrap{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:8px;max-height:220px;overflow-y:auto;margin-bottom:14px}
+.tree-node{cursor:pointer;border-radius:6px;padding:6px 8px;font-size:13px;display:flex;align-items:center;gap:6px;transition:all .15s}
+.tree-node:hover{background:var(--s3)}.tree-node.sel{background:rgba(0,212,255,.08);color:var(--accent)}
+/* PLAYER */
+.player-ov{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center}
+.player-ov.open{display:flex}.pw{width:90vw;max-width:1080px;position:relative}
+.p-close{position:absolute;top:-36px;right:0;background:none;border:none;color:var(--muted2);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:5px;transition:color .15s;font-family:'Instrument Sans',sans-serif}.p-close:hover{color:var(--text)}
+.p-title{color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:14px;font-weight:600;position:absolute;top:-32px;left:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72%}
+video#mv{width:100%;border-radius:10px;background:#000;max-height:76vh;display:block}
+/* CTX */
+.ctx{position:fixed;background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:5px;z-index:400;min-width:168px;box-shadow:0 12px 32px rgba(0,0,0,.6);display:none}
+.ctx.open{display:block}.ctx-head{padding:5px 11px 3px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+.ctx-item{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted2);transition:all .1s}.ctx-item:hover{background:var(--s3);color:var(--text)}.ctx-item svg{width:13px;height:13px;flex-shrink:0}
+.ctx-sep{height:1px;background:var(--border);margin:3px 0}.ctx-item.danger{color:var(--red)}.ctx-item.danger:hover{background:rgba(255,77,106,.1)}
+/* DRAG GHOST */
+.dg{position:fixed;background:var(--s2);border:1px solid var(--accent);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--accent);pointer-events:none;z-index:9998;opacity:.9;display:none}
+/* EMPTY */
+.empty-st{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--muted2);padding:50px;text-align:center}
+.empty-st .emoji{font-size:44px}.empty-st h3{font-family:'Cabinet Grotesk',sans-serif;font-size:17px;font-weight:700;color:var(--text)}.empty-st p{font-size:13px;max-width:300px;line-height:1.6}
+/* TOAST */
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:9px 16px;font-size:13px;opacity:0;transition:all .25s;z-index:9000;pointer-events:none;white-space:nowrap;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:rgba(0,232,122,.3);color:var(--green)}#toast.err{border-color:rgba(255,77,106,.3);color:var(--red)}#toast.info{border-color:rgba(0,212,255,.3);color:var(--accent)}
+.spinner{width:14px;height:14px;border:2px solid rgba(0,212,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="brand"><div class="brand-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 15a4 4 0 0 0 4 4h9a5 5 0 0 0 1.8-9.7A7 7 0 1 0 3 15z" stroke="#000" stroke-width="2.2" stroke-linecap="round"/></svg></div><div class="brand-name">Cloud<em>Vault</em></div></div>
+    <div id="tab-login">
+      <div class="auth-form"><h2>Welcome back</h2><p>Your personal Mega cloud dashboard</p>
+        <div class="err-box" id="lerr"></div>
+        <div class="field"><label>Username</label><input type="text" id="lu" placeholder="your username" autocomplete="username"/></div>
+        <div class="field"><label>Password</label><input type="password" id="lp" placeholder="••••••••" autocomplete="current-password"/></div>
+        <button class="btn btn-primary" id="lbtn" onclick="doLogin()">Sign In</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="height:100vh;flex-direction:column">
+  <div class="topbar">
+    <div class="brand" style="flex-shrink:0;cursor:pointer" onclick="goHome()">
+      <div class="brand-icon" style="width:28px;height:28px;border-radius:7px"><svg viewBox="0 0 24 24" fill="none" style="width:13px;height:13px"><path d="M3 15a4 4 0 0 0 4 4h9a5 5 0 0 0 1.8-9.7A7 7 0 1 0 3 15z" stroke="#000" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+      <div class="brand-name" style="font-size:14px">Cloud<em>Vault</em></div>
+    </div>
+    <div class="bc" id="bc"></div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="openAcctPanel()">☁️ Accounts</button>
+      <div class="user-chip" onclick="openProfilePanel()" title="Edit profile">
+        <div class="avatar" id="uavt" style="background:#00d4ff">?</div>
+        <span id="uname">—</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+  <div class="body-wrap">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-sect">
+        <div class="sb-label">Browse</div>
+        <div class="sb-item active" id="nav-all" onclick="setView('all')"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/><rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/><rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/><rect x="14" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/></svg>All Files</div>
+        <div class="sb-item" id="nav-videos" onclick="setView('videos')"><svg viewBox="0 0 24 24" fill="none"><polygon points="23 7 16 12 23 17 23 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="1" y="5" width="15" height="14" rx="2" stroke="currentColor" stroke-width="2"/></svg>Videos</div>
+        <div class="sb-item" id="nav-images" onclick="setView('images')"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="2"/><polyline points="21 15 16 10 5 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Images</div>
+        <div class="sb-item" id="nav-audio" onclick="setView('audio')"><svg viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="2"/></svg>Audio</div>
+      </div>
+      <div class="sb-sect"><div class="sb-label">Accounts</div><div id="sb-accts"></div>
+        <div class="sb-item" onclick="openAcctPanel()" style="color:var(--accent);font-size:12px;margin-top:4px"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Add Account</div>
+      </div>
+      <div class="sb-sect" id="sb-stor"></div>
+    </div>
+    <!-- MAIN -->
+    <div class="main">
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="text" id="q" placeholder="Search by name…" oninput="applyFilter()"/>
+          </div>
+          <div id="acct-chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+        <div class="view-btns">
+          <div class="vbtn active" id="vb-grid" onclick="setLayout('grid')" title="Grid"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/><rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/><rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/><rect x="14" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/></svg></div>
+          <div class="vbtn" id="vb-list" onclick="setLayout('list')" title="List"><svg viewBox="0 0 24 24" fill="none"><line x1="8" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="6" x2="3.01" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="3.01" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="3.01" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openUploadPanel()"><svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Upload</button>
+        <button class="btn btn-ghost btn-sm" onclick="openMkdirPanel()"><svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="11" x2="12" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="9" y1="14" x2="15" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>New Folder</button>
+      </div>
+      <!-- SORT / FILTER ROW -->
+      <div class="sort-row" id="sort-row">
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0">Sort:</span>
+        <div class="sort-chip active" id="sc-name" onclick="setSort('name')">Name <span class="arr" id="arr-name">↑</span></div>
+        <div class="sort-chip" id="sc-size" onclick="setSort('size')">Size <span class="arr" id="arr-size">↓</span></div>
+        <div class="sort-chip" id="sc-date" onclick="setSort('date')">Modified <span class="arr" id="arr-date">↓</span></div>
+        <div class="sort-chip" id="sc-type" onclick="setSort('type')">Type <span class="arr" id="arr-type">↓</span></div>
+        <div class="sep-v"></div>
+        <span style="font-size:11px;color:var(--muted);flex-shrink:0">Filter:</span>
+        <div class="sort-chip" id="fc-folder" onclick="toggleTypeFilter('folder')">📁 Folders</div>
+        <div class="sort-chip" id="fc-video" onclick="toggleTypeFilter('video')">🎬 Video</div>
+        <div class="sort-chip" id="fc-image" onclick="toggleTypeFilter('image')">🖼️ Image</div>
+        <div class="sort-chip" id="fc-audio" onclick="toggleTypeFilter('audio')">🎵 Audio</div>
+        <div class="sort-chip" id="fc-file" onclick="toggleTypeFilter('file')">📄 Docs</div>
+        <div class="sep-v"></div>
+        <span style="font-size:11px;color:var(--muted2);flex-shrink:0" id="file-count">— files</span>
+        <button class="btn btn-ghost btn-xs" id="clear-filters-btn" onclick="clearFilters()" style="display:none;margin-left:auto">✕ Clear filters</button>
+      </div>
+      <!-- SEL BAR -->
+      <div class="sel-bar" id="sel-bar">
+        <strong id="sel-count">0</strong>&nbsp;selected
+        <button class="btn btn-ghost btn-sm" onclick="openMovePanel()"><svg viewBox="0 0 24 24" fill="none" width="12" height="12"><polyline points="5 9 2 12 5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Move</button>
+        <button class="btn btn-danger btn-sm" onclick="bulkDelete()"><svg viewBox="0 0 24 24" fill="none" width="12" height="12"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Delete</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSel()" style="margin-left:auto">✕ Clear</button>
+      </div>
+      <div class="file-area" id="fa" ondragover="areaOver(event)" ondrop="areaDrop(event)">
+        <div class="empty-st"><div class="emoji">☁️</div><h3>No accounts yet</h3><p>Add your Mega.nz accounts to start.</p><button class="btn btn-primary" style="margin-top:10px" onclick="openAcctPanel()">Add Account</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE PANEL -->
+<div class="overlay" id="profile-panel">
+  <div class="panel profile-w">
+    <div class="ph"><h3>👤 Profile & Settings</h3><button class="pc" onclick="closePanel('profile-panel')"><svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="pb">
+      <div class="profile-tabs">
+        <div class="profile-tab active" onclick="switchProfileTab('info')">My Profile</div>
+        <div class="profile-tab" onclick="switchProfileTab('password')">Change Password</div>
+        <div class="profile-tab" onclick="switchProfileTab('mega')">Mega Credentials</div>
+      </div>
+      <!-- TAB: INFO -->
+      <div id="pt-info">
+        <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:18px">
+          <div id="prof-avatar-big" class="avatar-big" style="background:#00d4ff">?</div>
+          <div style="flex:1">
+            <div style="font-family:'Cabinet Grotesk',sans-serif;font-size:17px;font-weight:700" id="prof-username-big">—</div>
+            <div style="font-size:12px;color:var(--muted2);margin-bottom:8px" id="prof-email-big">—</div>
+            <div style="font-size:11px;color:var(--muted)" id="prof-joined">Joined —</div>
+          </div>
+        </div>
+        <div class="field"><label>Avatar Color</label>
+          <div class="color-swatches" id="color-swatches"></div>
+        </div>
+        <div class="field"><label>Display Name</label><input type="text" id="prof-name" placeholder="Your name"/></div>
+        <div class="field"><label>Bio</label><textarea id="prof-bio" rows="2" placeholder="A short bio…" style="padding:10px 13px"></textarea></div>
+        <div class="err-box" id="proferr"></div>
+        <div class="ok-box" id="profok"></div>
+        <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+      </div>
+      <!-- TAB: PASSWORD -->
+      <div id="pt-password" style="display:none">
+        <div class="err-box" id="pwerr"></div>
+        <div class="ok-box" id="pwok"></div>
+        <div class="field"><label>Current Password</label><input type="password" id="pw-cur" placeholder="Your current password"/></div>
+        <div class="field"><label>New Password</label><input type="password" id="pw-new" placeholder="6+ characters"/></div>
+        <div class="field"><label>Confirm New Password</label><input type="password" id="pw-conf" placeholder="Repeat new password"/></div>
+        <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+      </div>
+      <!-- TAB: MEGA CREDS -->
+      <div id="pt-mega" style="display:none">
+        <p style="font-size:13px;color:var(--muted2);margin-bottom:14px;line-height:1.6">Your saved Mega account credentials. These are stored encrypted in your database.</p>
+        <div id="mega-creds-list"></div>
+        <button class="btn btn-ghost btn-sm" onclick="openAcctPanel();closePanel('profile-panel')" style="margin-top:8px">+ Add Mega Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCOUNTS PANEL -->
+<div class="overlay" id="acct-panel">
+  <div class="panel wide">
+    <div class="ph"><h3>☁️ Mega Accounts</h3><button class="pc" onclick="closePanel('acct-panel')"><svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="pb">
+      <div id="acct-list-ui" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+      <div class="sep"></div>
+      <h4 style="font-family:'Cabinet Grotesk',sans-serif;margin-bottom:12px;font-size:14px">Add New Account</h4>
+      <div class="err-box" id="aaerr"></div>
+      <div class="field"><label>Alias</label><input type="text" id="aa-alias" placeholder="e.g. Personal, Work…"/></div>
+      <div class="field"><label>Mega Email</label><input type="email" id="aa-email" placeholder="mega@example.com"/></div>
+      <div class="field"><label>Mega Password</label><input type="password" id="aa-pass" placeholder="••••••••"/></div>
+      <button class="btn btn-green" id="aa-btn" onclick="addAccount()"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Connect Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD PANEL -->
+<div class="overlay" id="upload-panel">
+  <div class="panel wide">
+    <div class="ph"><h3>⬆️ Upload Files</h3><button class="pc" onclick="closePanel('upload-panel')"><svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="pb">
+      <div id="up-s1">
+        <div class="up-zone" id="up-zone" onclick="document.getElementById('fi').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="this.classList.remove('drag')">
+          <div class="emoji">📂</div><p>Drop files here or click to browse</p><span>Any file type • Multiple OK</span>
+        </div>
+        <input type="file" id="fi" multiple onchange="queueFiles(Array.from(event.target.files));event.target.value=''"/>
+        <div class="up-list" id="up-list"></div>
+        <div id="up-s1-act" style="display:none;margin-top:12px"><button class="btn btn-primary" onclick="toRouteStep()">Choose Destination →</button></div>
+      </div>
+      <div id="up-s2" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <button class="btn btn-ghost btn-sm" onclick="toFileStep()">← Back</button>
+          <span style="font-size:13px;color:var(--muted2)" id="up-s2-info"></span>
+        </div>
+        <p style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Select Account</p>
+        <div class="route-cards" id="route-cards"></div>
+        <div class="field" id="folder-pick" style="display:none">
+          <label>Destination Folder</label>
+          <select id="folder-sel"><option value="">Root</option></select>
+        </div>
+        <div class="err-box" id="uperr"></div>
+        <button class="btn btn-primary" id="up-go" onclick="startUpload()" disabled>Start Upload</button>
+      </div>
+      <div id="up-s3" style="display:none">
+        <div class="up-list" id="up-prog-list"></div>
+        <div id="up-done" style="display:none;margin-top:14px;gap:8px">
+          <button class="btn btn-ghost" onclick="resetUpload()">Upload More</button>
+          <button class="btn btn-primary" onclick="closePanel('upload-panel');loadCurrentView()">Done ✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MKDIR -->
+<div class="overlay" id="mkdir-panel">
+  <div class="panel narrow">
+    <div class="ph"><h3>📁 New Folder</h3><button class="pc" onclick="closePanel('mkdir-panel')"><svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="pb">
+      <div class="field"><label>Account</label><select id="md-acct"></select></div>
+      <div class="field"><label>Parent Folder</label><select id="md-parent"><option value="">Root</option></select></div>
+      <div class="field"><label>Folder Name</label><input type="text" id="md-name" placeholder="My Folder"/></div>
+      <div class="err-box" id="mderr"></div>
+      <button class="btn btn-primary" onclick="doMkdir()">Create Folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENAME -->
+<div class="overlay" id="rename-panel">
+  <div class="panel narrow">
+    <div class="ph"><h3>✏️ Rename</h3><button class="pc" onclick="closePanel('rename-panel')"><svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="pb">
+      <div class="field"><label>New Name</label><input type="text" id="rn-name" placeholder="New name…"/></div>
+      <div class="err-box" id="rnerr"></div>
+      <button class="btn btn-primary" onclick="doRename()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOVE -->
+<div class="overlay" id="move-panel">
+  <div class="panel wide">
+    <div class="ph"><h3>📦 Move Files</h3><button class="pc" onclick="closePanel('move-panel')"><svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="pb">
+      <p style="font-size:13px;color:var(--muted2);margin-bottom:14px" id="mv-desc"></p>
+      <div class="field"><label>Account</label><select id="mv-acct" onchange="loadMoveTree()"></select></div>
+      <p style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Destination Folder</p>
+      <div class="tree-wrap" id="mv-tree"></div>
+      <div class="err-box" id="mverr"></div>
+      <button class="btn btn-primary" id="mv-btn" onclick="doMove()">Move Here</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER -->
+<div class="player-ov" id="player-ov">
+  <div class="pw">
+    <div class="p-title" id="ptitle"></div>
+    <button class="p-close" onclick="closePlayer()"><svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Close (Esc)</button>
+    <video id="mv" controls preload="auto"></video>
+  </div>
+</div>
+
+<!-- CTX MENU -->
+<div class="ctx" id="ctx">
+  <div class="ctx-head" id="ctx-head">File</div>
+  <div class="ctx-item" id="cx-open"><svg viewBox="0 0 24 24" fill="none"><polygon points="5 3 19 12 5 21 5 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Open / Play</div>
+  <div class="ctx-item" id="cx-dl"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Download</div>
+  <div class="ctx-item" id="cx-move"><svg viewBox="0 0 24 24" fill="none"><polyline points="5 9 2 12 5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Move to…</div>
+  <div class="ctx-item" id="cx-rename"><svg viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rename</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" id="cx-del"><svg viewBox="0 0 24 24" fill="none"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Delete</div>
+</div>
+
+<div class="dg" id="dg"></div>
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+const API = 'http://localhost:3000/api';
+let token = localStorage.getItem('cv_tok'), me = JSON.parse(localStorage.getItem('cv_me')||'null');
+let accounts=[], allFiles=[], filteredFiles=[], pendingUps=[];
+let selectedIds=new Set(), ctxFile=null, renameTarget=null, moveTargets=[];
+let moveDestNodeId=null, selectedRouteId=null;
+let currentView='all', currentLayout='grid', acctFilter=null, nav=[];
+let sortKey='name', sortDir=1; // sortDir: 1=asc, -1=desc
+let typeFilters=new Set(); // active type filters
+let dragFiles=[];
+const COLORS=['#00d4ff','#00e87a','#b06aff','#ff9d42','#ffd742','#ff4d6a','#00ffe0','#ff6eb4'];
+const $=id=>document.getElementById(id);
+const fmtSz=b=>!b?'—':b>=1e9?(b/1e9).toFixed(2)+' GB':b>=1e6?(b/1e6).toFixed(1)+' MB':(b/1e3).toFixed(0)+' KB';
+const fmtDate=ts=>!ts?'—':new Date(ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+const toast=(m,t='',ms=3500)=>{const el=$('toast');el.textContent=m;el.className='show '+(t||'');setTimeout(()=>el.className='',ms)};
+const api=async(method,path,body)=>{
+  const o={method,headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}};
+  if(body)o.body=JSON.stringify(body);
+  const r=await fetch(API+path,o);const d=await r.json();
+  if(!r.ok)throw new Error(d.error||'Error');return d;
+};
+const ICONS={folder:'📁',video:'🎬',image:'🖼️',audio:'🎵',pdf:'📄',archive:'🗜️',file:'📝'};
+const THUMBS={folder:'c-folder',video:'c-video',image:'c-image',audio:'c-audio',file:'c-file'};
+const icon=t=>ICONS[t]||'📝', thumb=t=>THUMBS[t]||'c-file';
+const aColor=id=>{const a=accounts.find(x=>x.id===id);return a?.color||COLORS[accounts.findIndex(x=>x.id===id)%COLORS.length]||'#888'};
+const aAlias=id=>accounts.find(a=>a.id===id)?.alias||id;
+function ttag(t){const m={video:'tag-video',image:'tag-image',audio:'tag-audio',folder:'tag-folder',archive:'tag-archive',file:'tag-file',pdf:'tag-file'};return`<span class="tag ${m[t]||'tag-file'}">${t}</span>`}
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+function switchTab(t){} // single-user: no tabs
+async function doLogin(){
+  const u=($('lu')||{}).value?.trim()||'',p=$('lp').value,err=$('lerr');err.style.display='none';
+  if(!u||!p){err.textContent='Fill all fields';err.style.display='block';return;}
+  const b=$('lbtn');b.disabled=true;b.innerHTML='<div class="spinner"></div>';
+  try{const d=await api('POST','/auth/login',{username:u,password:p});token=d.token;me=d.user;localStorage.setItem('cv_tok',token);localStorage.setItem('cv_me',JSON.stringify(me));bootApp();}
+  catch(ex){err.textContent=ex.message;err.style.display='block';}
+  finally{b.disabled=false;b.textContent='Sign In';}
+}
+async function doRegister(){} // disabled
+function doLogout(){localStorage.clear();location.reload();}
+
+// ══════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════
+async function bootApp(){
+  $('auth-screen').style.display='none';$('app').style.display='flex';
+  updateUserChip();await loadAccounts();loadAllFiles();
+}
+function updateUserChip(){
+  const color=me?.avatarColor||'#00d4ff';
+  $('uavt').style.background=color;$('uavt').textContent=(me?.username||'?')[0].toUpperCase();
+  $('uname').textContent=me?.username||'—';
+}
+async function loadAccounts(){
+  try{const d=await api('GET','/accounts');accounts=d.accounts;renderSBAccts();renderAcctListUI();populateMkdirAcct();}
+  catch(e){console.error(e);}
+}
+async function loadAllFiles(){
+  $('fa').innerHTML='<div class="empty-st"><div class="spinner" style="width:28px;height:28px;border-width:2px"></div><p style="margin-top:10px;color:var(--muted2)">Loading files…</p></div>';
+  try{const d=await api('GET','/files/all');allFiles=d.files;applyFilter();renderStorageInfo();}
+  catch(e){$('fa').innerHTML=`<div class="empty-st"><div class="emoji">⚠️</div><h3>Error</h3><p>${e.message}</p></div>`;}
+}
+function loadCurrentView(){if(nav.length){const l=nav[nav.length-1];loadFolderFiles(l.accountId,l.nodeId);}else loadAllFiles();}
+
+// ══════════════════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════════════════
+function renderSBAccts(){
+  $('sb-accts').innerHTML='';
+  accounts.forEach(a=>{
+    const d=document.createElement('div');d.className='sb-item'+(acctFilter===a.id?' active':'');
+    d.innerHTML=`<div class="acct-dot" style="background:${a.color||aColor(a.id)}"></div><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${a.alias}</span><span style="font-size:9px;color:${a.status==='ready'?'var(--green)':'var(--muted)'}">${a.status==='ready'?'●':'○'}</span>`;
+    d.onclick=()=>{if(acctFilter===a.id){acctFilter=null;nav=[];loadAllFiles();}else{acctFilter=a.id;nav=[{accountId:a.id,nodeId:null,name:a.alias}];loadFolderFiles(a.id,null);}renderSBAccts();};
+    $('sb-accts').appendChild(d);
+  });
+  // Chips
+  $('acct-chips').innerHTML='';
+  accounts.forEach(a=>{
+    const color=a.color||aColor(a.id);
+    const ch=document.createElement('button');ch.className='btn btn-ghost btn-sm';
+    ch.style.cssText=`border-color:${color}30;color:${acctFilter===a.id?color:'var(--muted2)'};background:${acctFilter===a.id?color+'14':'none'};font-size:11px;padding:3px 9px`;
+    ch.innerHTML=`<span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block;margin-right:3px"></span>${a.alias}`;
+    ch.onclick=()=>{acctFilter=acctFilter===a.id?null:a.id;applyFilter();renderSBAccts();};
+    $('acct-chips').appendChild(ch);
+  });
+}
+async function renderStorageInfo(){
+  const el=$('sb-stor');el.innerHTML='<div class="sb-label" style="padding:0 8px;margin-bottom:6px">Storage</div>';
+  for(const a of accounts){
+    if(a.status!=='ready')continue;
+    try{const d=await api('GET',`/accounts/${a.id}/storage`);if(d.storage){const s=d.storage,c=a.color||aColor(a.id);el.innerHTML+=`<div class="stor-card"><div class="stor-hdr"><span style="font-weight:600;color:${c}">${a.alias}</span><span style="color:var(--muted2)">${s.usedFormatted}/${s.totalFormatted}</span></div><div class="stor-bar"><div class="stor-fill" style="width:${s.pct}%;background:${c}"></div></div></div>`;}}
+    catch(e){}
+  }
+}
+
+// ══════════════════════════════════════════════
+// SORT & FILTER
+// ══════════════════════════════════════════════
+function setSort(key){
+  if(sortKey===key)sortDir*=-1;else{sortKey=key;sortDir=key==='name'?1:-1;}
+  document.querySelectorAll('.sort-chip[id^="sc-"]').forEach(el=>el.classList.remove('active'));
+  $('sc-'+key).classList.add('active');
+  ['name','size','date','type'].forEach(k=>{const a=$('arr-'+k);if(a)a.textContent=sortKey===k?(sortDir===1?'↑':'↓'):'↓';});
+  applyFilter();
+}
+function toggleTypeFilter(t){
+  if(typeFilters.has(t))typeFilters.delete(t);else typeFilters.add(t);
+  document.querySelectorAll('.sort-chip[id^="fc-"]').forEach(el=>{const tp=el.id.replace('fc-','');el.classList.toggle('active',typeFilters.has(tp));});
+  $('clear-filters-btn').style.display=typeFilters.size>0?'inline-flex':'none';
+  applyFilter();
+}
+function clearFilters(){typeFilters.clear();document.querySelectorAll('.sort-chip[id^="fc-"]').forEach(el=>el.classList.remove('active'));$('clear-filters-btn').style.display='none';applyFilter();}
+function applyFilter(){
+  const q=($('q').value||'').toLowerCase();
+  let arr=allFiles.filter(f=>{
+    if(currentView==='videos'&&f.type!=='video')return false;
+    if(currentView==='images'&&f.type!=='image')return false;
+    if(currentView==='audio'&&f.type!=='audio')return false;
+    if(acctFilter&&f.accountId!==acctFilter)return false;
+    if(q&&!f.name.toLowerCase().includes(q))return false;
+    if(typeFilters.size>0){
+      const t=f.isDir?'folder':f.type;
+      if(!typeFilters.has(t==='pdf'?'file':t==='archive'?'file':t))return false;
+    }
+    return true;
+  });
+  // Sort
+  arr.sort((a,b)=>{
+    // Folders always first
+    if(a.isDir&&!b.isDir)return -1;if(!a.isDir&&b.isDir)return 1;
+    let v=0;
+    if(sortKey==='name')v=a.name.localeCompare(b.name);
+    else if(sortKey==='size')v=(a.size||0)-(b.size||0);
+    else if(sortKey==='date')v=(a.modifiedAt||0)-(b.modifiedAt||0);
+    else if(sortKey==='type')v=(a.type||'').localeCompare(b.type||'');
+    return v*sortDir;
+  });
+  filteredFiles=arr;
+  const fc=$('file-count');if(fc)fc.textContent=`${arr.length} item${arr.length!==1?'s':''}`;
+  renderFiles(arr);
+}
+function setView(v){currentView=v;nav=[];acctFilter=null;['all','videos','images','audio'].forEach(x=>$('nav-'+x)?.classList.toggle('active',x===v));loadAllFiles();updateBC();}
+function setLayout(l){currentLayout=l;$('vb-grid').classList.toggle('active',l==='grid');$('vb-list').classList.toggle('active',l==='list');renderFiles(filteredFiles);}
+
+// ══════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════
+function renderFiles(files){
+  const fa=$('fa');clearSel();
+  if(!files.length){fa.innerHTML=`<div class="empty-st"><div class="emoji">${accounts.length?'🔍':'☁️'}</div><h3>${accounts.length?'No files found':'No accounts'}</h3><p>${accounts.length?'Try a different search, filter, or sort.':'Add Mega accounts to browse your cloud.'}</p>${!accounts.length?'<button class="btn btn-primary" style="margin-top:10px" onclick="openAcctPanel()">Add Account</button>':''}</div>`;return;}
+  currentLayout==='grid'?renderGrid(files,fa):renderList(files,fa);
+}
+function renderGrid(files,fa){
+  fa.innerHTML='';const g=document.createElement('div');g.className='file-grid';
+  files.forEach((f,i)=>{
+    const color=aColor(f.accountId);
+    const c=document.createElement('div');c.className='fc'+(selectedIds.has(f.id)?' selected':'');
+    c.style.animationDelay=`${Math.min(i*.02,.5)}s`;c.dataset.id=f.id;c.draggable=true;
+    c.innerHTML=`<div class="c-thumb ${thumb(f.type)}"><div class="c-check">${selectedIds.has(f.id)?'✓':''}</div>${icon(f.type)}</div><div class="c-info"><div class="c-name" title="${f.name}">${f.name}</div><div class="c-meta"><span class="ab" style="background:${color}15;color:${color};border:1px solid ${color}22">${aAlias(f.accountId)}</span>${f.sizeFormatted&&f.sizeFormatted!=='—'?`<span style="color:var(--muted)">${f.sizeFormatted}</span>`:''}</div>${f.modifiedAt?`<div class="c-date">${fmtDate(f.modifiedAt)}</div>`:''}</div>`;
+    c.onclick=e=>cardClick(e,f,c);c.oncontextmenu=e=>{e.preventDefault();showCtx(e,f);};
+    c.ondragstart=e=>dragStart(e,f);c.ondragend=e=>dragEnd(e,c);
+    if(f.isDir){c.ondragover=e=>folderOver(e,c);c.ondragleave=e=>folderLeave(e,c);c.ondrop=e=>folderDrop(e,f);}
+    g.appendChild(c);
+  });
+  fa.appendChild(g);
+}
+function renderList(files,fa){
+  fa.innerHTML='';const w=document.createElement('div');w.className='file-list';
+  w.innerHTML='<div class="fl-hdr"><div></div><div></div><div>Name</div><div>Account</div><div style="text-align:right">Size</div><div>Modified</div><div></div></div>';
+  files.forEach((f,i)=>{
+    const color=aColor(f.accountId);
+    const r=document.createElement('div');r.className='fl-row'+(selectedIds.has(f.id)?' selected':'');
+    r.style.animationDelay=`${Math.min(i*.01,.4)}s`;r.dataset.id=f.id;r.draggable=true;
+    r.innerHTML=`<div class="fl-check" onclick="event.stopPropagation();toggleSel('${f.id}',this.parentElement)">${selectedIds.has(f.id)?'✓':''}</div><div class="fl-icon">${icon(f.type)}</div><div class="fl-name" title="${f.name}">${f.name}</div><div><span class="ab" style="background:${color}15;color:${color};border:1px solid ${color}22">${aAlias(f.accountId)}</span></div><div class="fl-size">${f.sizeFormatted||'—'}</div><div class="fl-date">${fmtDate(f.modifiedAt)}</div><div class="fl-act"><button class="btn-icon" title="Move"><svg viewBox="0 0 24 24" fill="none"><polyline points="5 9 2 12 5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button><button class="btn-icon" title="Download" onclick="event.stopPropagation();dlFile('${f.accountId}','${f.nodeId}','${f.name}')"><svg viewBox="0 0 24 24" fill="none"><polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>`;
+    r.onclick=e=>cardClick(e,f,r);r.oncontextmenu=e=>{e.preventDefault();showCtx(e,f);};
+    r.ondragstart=e=>dragStart(e,f);r.ondragend=e=>dragEnd(e,r);
+    if(f.isDir){r.ondragover=e=>folderOver(e,r);r.ondragleave=e=>folderLeave(e,r);r.ondrop=e=>folderDrop(e,f);}
+    const mvBtn=r.querySelector('.btn-icon');if(mvBtn)mvBtn.onclick=e=>{e.stopPropagation();moveTargets=[f];openMovePanel();};
+    w.appendChild(r);
+  });
+  fa.appendChild(w);
+}
+
+// SELECTION
+function cardClick(e,f,el){if(e.shiftKey||e.ctrlKey||e.metaKey||selectedIds.size>0){toggleSel(f.id,el);return;}openFile(f);}
+function toggleSel(id,el){if(selectedIds.has(id)){selectedIds.delete(id);el.classList.remove('selected');const ch=el.querySelector('.c-check,.fl-check');if(ch)ch.textContent='';}else{selectedIds.add(id);el.classList.add('selected');const ch=el.querySelector('.c-check,.fl-check');if(ch)ch.textContent='✓';}updateSelBar();}
+function updateSelBar(){const b=$('sel-bar');if(selectedIds.size>0){b.classList.add('show');$('sel-count').textContent=selectedIds.size;}else b.classList.remove('show');}
+function clearSel(){selectedIds.clear();document.querySelectorAll('.fc.selected,.fl-row.selected').forEach(el=>{el.classList.remove('selected');const ch=el.querySelector('.c-check,.fl-check');if(ch)ch.textContent='';});updateSelBar();}
+async function bulkDelete(){
+  const items=filteredFiles.filter(f=>selectedIds.has(f.id));if(!items.length)return;
+  if(!confirm(`Delete ${items.length} item(s)? This cannot be undone.`))return;
+  const byAcct={};items.forEach(f=>{(byAcct[f.accountId]=byAcct[f.accountId]||[]).push(f.nodeId);});
+  try{await Promise.all(Object.entries(byAcct).map(([aId,ids])=>api('DELETE',`/accounts/${aId}/files`,{nodeIds:ids})));toast(`🗑️ Deleted ${items.length} item(s)`,'ok');allFiles=allFiles.filter(f=>!selectedIds.has(f.id));clearSel();applyFilter();}
+  catch(e){toast('❌ '+e.message,'err');}
+}
+
+// FILE ACTIONS
+function openFile(f){if(f.isDir||f.type==='folder'){browseFolder(f);return;}if(f.type==='video'||f.type==='audio'){playMedia(f);return;}dlFile(f.accountId,f.nodeId,f.name);}
+function playMedia(f){$('mv').src=`${API}/accounts/${f.accountId}/stream/${f.nodeId}?token=${encodeURIComponent(token)}`;$('mv').load();$('mv').play().catch(()=>{});$('ptitle').textContent=f.name;$('player-ov').classList.add('open');}
+function closePlayer(){$('mv').pause();$('mv').src='';$('player-ov').classList.remove('open');}
+function dlFile(aid,nid,name){const a=document.createElement('a');a.href=`${API}/accounts/${aid}/download/${nid}?token=${encodeURIComponent(token)}`;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);}
+async function browseFolder(f){nav.push({accountId:f.accountId,nodeId:f.nodeId||f.id,name:f.name});await loadFolderFiles(f.accountId,f.nodeId||f.id);updateBC();}
+async function loadFolderFiles(accountId,nodeId){
+  $('fa').innerHTML='<div class="empty-st"><div class="spinner" style="width:24px;height:24px;border-width:2px"></div></div>';
+  try{const q=nodeId?`?nodeId=${nodeId}`:'';const d=await api('GET',`/accounts/${accountId}/files${q}`);allFiles=d.items;applyFilter();}
+  catch(e){$('fa').innerHTML=`<div class="empty-st"><div class="emoji">⚠️</div><h3>Error</h3><p>${e.message}</p></div>`;}
+}
+function goHome(){nav=[];acctFilter=null;currentView='all';['all','videos','images','audio'].forEach(x=>$('nav-'+x)?.classList.toggle('active',x==='all'));loadAllFiles();updateBC();}
+function updateBC(){
+  const bc=$('bc');bc.innerHTML='';
+  const add=(label,fn,isCur)=>{const s=document.createElement('span');s.className='bc-item'+(isCur?' cur':'');s.textContent=label;if(fn&&!isCur)s.onclick=fn;bc.appendChild(s);};
+  const sep=()=>{const s=document.createElement('span');s.className='bc-sep';s.textContent='/';bc.appendChild(s);};
+  if(!nav.length){add(currentView==='all'?'All Files':currentView[0].toUpperCase()+currentView.slice(1),null,true);return;}
+  add('Home',()=>{nav=[];acctFilter=null;loadAllFiles();});
+  nav.forEach((n,i)=>{sep();add(n.name,i<nav.length-1?()=>{nav=nav.slice(0,i+1);loadFolderFiles(n.accountId,n.nodeId);updateBC();}:null,i===nav.length-1);});
+}
+
+// DRAG
+function dragStart(e,f){dragFiles=selectedIds.has(f.id)&&selectedIds.size>1?filteredFiles.filter(x=>selectedIds.has(x.id)):[f];const g=$('dg');g.textContent=dragFiles.length>1?`📦 ${dragFiles.length} files`:`📦 ${f.name}`;g.style.display='block';e.dataTransfer.effectAllowed='move';e.dataTransfer.setDragImage(new Image(),0,0);e.currentTarget?.classList.add('dragging');}
+function dragEnd(e,el){$('dg').style.display='none';dragFiles=[];document.querySelectorAll('.dragging,.drag-over').forEach(x=>x.classList.remove('dragging','drag-over'));}
+document.addEventListener('dragover',e=>{const g=$('dg');if(g.style.display!=='none'){g.style.left=e.clientX+14+'px';g.style.top=e.clientY+8+'px';}});
+function folderOver(e,el){e.preventDefault();e.stopPropagation();el.classList.add('drag-over');}
+function folderLeave(e,el){if(!el.contains(e.relatedTarget))el.classList.remove('drag-over');}
+async function folderDrop(e,tgt){e.preventDefault();e.stopPropagation();document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));if(!dragFiles.length)return;const toMove=dragFiles.filter(f=>f.id!==tgt.id);if(!toMove.length)return;if(!toMove.every(f=>f.accountId===tgt.accountId)){toast('⚠️ Drag-drop works within same account only.','info');return;}await execMoves(toMove,tgt.accountId,tgt.nodeId||tgt.id);}
+function areaOver(e){e.preventDefault();}
+async function areaDrop(e){e.preventDefault();if(!dragFiles.length)return;const nl=nav.length?nav[nav.length-1]:null;if(!nl)return;if(!dragFiles.every(f=>f.accountId===nl.accountId)){toast('⚠️ Same-account only for drag-drop','info');return;}await execMoves(dragFiles,nl.accountId,nl.nodeId);}
+async function execMoves(files,accountId,targetNodeId){
+  toast(`📦 Moving ${files.length} file(s)…`,'info');
+  try{await Promise.all(files.map(f=>api('PATCH',`/accounts/${f.accountId}/files/${f.nodeId}/move`,{targetNodeId:targetNodeId||null})));toast(`✅ Moved ${files.length} item(s)`,'ok');clearSel();loadCurrentView();}
+  catch(e){toast('❌ '+e.message,'err');}
+}
+
+// CTX MENU
+function showCtx(e,f){ctxFile=f;const m=$('ctx');m.style.left=Math.min(e.pageX,window.innerWidth-180)+'px';m.style.top=Math.min(e.pageY,window.innerHeight-200)+'px';m.classList.add('open');$('ctx-head').textContent=f.name.length>24?f.name.slice(0,22)+'…':f.name;$('cx-open').onclick=()=>{closeCtx();openFile(f);};$('cx-dl').style.display=f.isDir?'none':'flex';$('cx-dl').onclick=()=>{closeCtx();dlFile(f.accountId,f.nodeId,f.name);};$('cx-move').onclick=()=>{closeCtx();moveTargets=[f];openMovePanel();};$('cx-rename').onclick=()=>{closeCtx();openRenamePanel(f);};$('cx-del').onclick=()=>{closeCtx();confirmDelete(f);};}
+function closeCtx(){$('ctx').classList.remove('open');}
+document.addEventListener('click',closeCtx);
+async function confirmDelete(f){if(!confirm(`Delete "${f.name}"?`))return;try{await api('DELETE',`/accounts/${f.accountId}/files`,{nodeIds:[f.nodeId]});toast(`🗑️ Deleted "${f.name}"`,'ok');allFiles=allFiles.filter(x=>x.id!==f.id);filteredFiles=filteredFiles.filter(x=>x.id!==f.id);renderFiles(filteredFiles);}catch(e){toast('❌ '+e.message,'err');}}
+
+// RENAME
+function openRenamePanel(f){renameTarget=f;$('rn-name').value=f.name;$('rnerr').style.display='none';openPanel('rename-panel');setTimeout(()=>$('rn-name').select(),80);}
+async function doRename(){const name=$('rn-name').value.trim(),err=$('rnerr');err.style.display='none';if(!name){err.textContent='Name required';err.style.display='block';return;}try{await api('PATCH',`/accounts/${renameTarget.accountId}/files/${renameTarget.nodeId}/rename`,{name});toast(`✅ Renamed`,'ok');closePanel('rename-panel');[allFiles,filteredFiles].forEach(arr=>{const f=arr.find(x=>x.id===renameTarget.id);if(f)f.name=name;});renderFiles(filteredFiles);}catch(e){err.textContent=e.message;err.style.display='block';}}
+
+// MOVE
+function openMovePanel(){if(!moveTargets.length&&selectedIds.size>0)moveTargets=filteredFiles.filter(f=>selectedIds.has(f.id));if(!moveTargets.length){toast('Select files first','err');return;}$('mv-desc').textContent=`Moving: ${moveTargets.length===1?`"${moveTargets[0].name}"`:moveTargets.length+' items'}`;$('mverr').style.display='none';moveDestNodeId=null;const md=$('mv-acct');md.innerHTML='';accounts.filter(a=>a.status==='ready').forEach(a=>{md.innerHTML+=`<option value="${a.id}">${a.alias}</option>`;});if(moveTargets[0]?.accountId)md.value=moveTargets[0].accountId;openPanel('move-panel');loadMoveTree();}
+async function loadMoveTree(){const aid=$('mv-acct').value;if(!aid)return;$('mv-tree').innerHTML='<div style="color:var(--muted2);font-size:13px;padding:8px;display:flex;align-items:center;gap:8px"><div class="spinner"></div> Loading…</div>';try{const d=await api('GET',`/accounts/${aid}/tree`);$('mv-tree').innerHTML='';const root=document.createElement('div');root.className='tree-node sel';root.innerHTML='📁 Root';root.onclick=()=>{moveDestNodeId=null;document.querySelectorAll('.tree-node').forEach(x=>x.classList.remove('sel'));root.classList.add('sel');};$('mv-tree').appendChild(root);function rn(nodes,depth){nodes.forEach(n=>{const el=document.createElement('div');el.style.paddingLeft=(depth*14)+'px';el.className='tree-node';el.innerHTML=`<span style="width:12px;font-size:10px;color:var(--muted)">${n.children?.length?'▸':''}</span>📁 ${n.name}`;el.onclick=e=>{e.stopPropagation();moveDestNodeId=n.id;document.querySelectorAll('.tree-node').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');};$('mv-tree').appendChild(el);if(n.children?.length)rn(n.children,depth+1);});}rn(d.tree.children||[],1);}catch(e){$('mv-tree').innerHTML=`<div style="color:var(--red);font-size:13px;padding:8px">${e.message}</div>`;}}
+async function doMove(){const aid=$('mv-acct').value,err=$('mverr');err.style.display='none';if(!moveTargets.length){err.textContent='No files';err.style.display='block';return;}const btn=$('mv-btn');btn.disabled=true;btn.innerHTML='<div class="spinner"></div>';try{for(const f of moveTargets){if(f.accountId!==aid)throw new Error('Cross-account moves not supported by Mega API.');await api('PATCH',`/accounts/${f.accountId}/files/${f.nodeId}/move`,{targetNodeId:moveDestNodeId});}toast(`✅ Moved ${moveTargets.length} item(s)`,'ok');closePanel('move-panel');clearSel();moveTargets=[];loadCurrentView();}catch(e){err.textContent=e.message;err.style.display='block';}finally{btn.disabled=false;btn.textContent='Move Here';}}
+
+// MKDIR
+function openMkdirPanel(){populateMkdirAcct();$('mderr').style.display='none';$('md-name').value='';openPanel('mkdir-panel');}
+function populateMkdirAcct(){const s=$('md-acct');const v=s.value;s.innerHTML='<option value="">Select account…</option>';accounts.filter(a=>a.status==='ready').forEach(a=>{s.innerHTML+=`<option value="${a.id}">${a.alias}</option>`;});if(v)s.value=v;s.onchange=()=>loadMkdirFolders(s.value);if(s.value)loadMkdirFolders(s.value);}
+async function loadMkdirFolders(aid){const sel=$('md-parent');sel.innerHTML='<option value="">Root</option>';if(!aid)return;try{const d=await api('GET',`/accounts/${aid}/tree`);function add(nodes,p=''){nodes.forEach(n=>{sel.innerHTML+=`<option value="${n.id}">${p}📁 ${n.name}</option>`;if(n.children?.length)add(n.children,p+'  ');});}add(d.tree.children||[]);const nl=nav.length?nav[nav.length-1]:null;if(nl?.accountId===aid&&nl.nodeId)sel.value=nl.nodeId;}catch(e){}}
+async function doMkdir(){const aid=$('md-acct').value,name=$('md-name').value.trim(),pid=$('md-parent').value||null,err=$('mderr');err.style.display='none';if(!aid||!name){err.textContent='Select account and enter name';err.style.display='block';return;}try{await api('POST',`/accounts/${aid}/mkdir`,{name,parentNodeId:pid});closePanel('mkdir-panel');toast(`📁 "${name}" created`,'ok');loadCurrentView();}catch(e){err.textContent=e.message;err.style.display='block';}}
+
+// UPLOAD
+function openUploadPanel(){resetUpload();openPanel('upload-panel');}
+function resetUpload(){pendingUps=[];$('up-list').innerHTML='';$('up-s1-act').style.display='none';$('up-s1').style.display='block';$('up-s2').style.display='none';$('up-s3').style.display='none';selectedRouteId=null;}
+function toFileStep(){$('up-s2').style.display='none';$('up-s1').style.display='block';}
+function handleDragOver(e){e.preventDefault();$('up-zone').classList.add('drag');}
+function handleDrop(e){e.preventDefault();$('up-zone').classList.remove('drag');queueFiles(Array.from(e.dataTransfer.files));}
+function queueFiles(files){pendingUps=[...pendingUps,...files];$('up-list').innerHTML='';pendingUps.forEach(f=>{$('up-list').innerHTML+=`<div class="up-item"><span style="font-size:14px">${f.type.startsWith('video')?'🎬':f.type.startsWith('image')?'🖼️':f.type.startsWith('audio')?'🎵':'📄'}</span><span class="up-item-name">${f.name}</span><span style="font-size:10px;color:var(--muted2)">${fmtSz(f.size)}</span></div>`;});$('up-s1-act').style.display=pendingUps.length?'block':'none';}
+async function toRouteStep(){if(!pendingUps.length)return;$('up-s1').style.display='none';$('up-s2').style.display='block';const totalSize=pendingUps.reduce((s,f)=>s+f.size,0);$('up-s2-info').textContent=`${pendingUps.length} file(s) · ${fmtSz(totalSize)} total`;$('route-cards').innerHTML='<div style="color:var(--muted2);font-size:13px;display:flex;align-items:center;gap:8px;padding:8px 0"><div class="spinner"></div> Checking storage…</div>';$('up-go').disabled=true;$('folder-pick').style.display='none';selectedRouteId=null;try{const d=await api('GET',`/upload-route?size=${totalSize}`);renderRouteCards(d);}catch(e){$('route-cards').innerHTML=`<div style="color:var(--red);font-size:13px">${e.message}</div>`;}}
+function renderRouteCards(d){$('route-cards').innerHTML='';if(!d.accounts.length){$('route-cards').innerHTML='<div style="color:var(--muted2);font-size:13px">No connected accounts.</div>';return;}d.accounts.forEach(a=>{const color=a.color||aColor(a.accountId);const isSugg=a.accountId===d.suggested;const cantFit=!a.canFit;const card=document.createElement('div');card.className='route-card'+(cantFit?' cant-fit':'');card.innerHTML=`<div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;margin-top:3px"></div><div class="route-info"><div class="route-name">${a.alias}${isSugg?'<span class="rec-badge">RECOMMENDED</span>':''}</div><div class="route-meta">${a.email} · ${a.usedFormatted}/${a.totalFormatted}</div><div class="route-bar"><div class="route-fill" style="width:${a.pct}%;background:${color}"></div></div></div><div style="font-size:12px;font-weight:600;color:${cantFit?'var(--red)':color};flex-shrink:0">${a.freeFormatted}<br><span style="font-size:9px;color:var(--muted2);font-weight:400">free</span></div>`;if(!cantFit){card.onclick=()=>{document.querySelectorAll('.route-card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');selectedRouteId=a.accountId;$('up-go').disabled=false;loadUploadFolders(a.accountId);$('folder-pick').style.display='block';};} $('route-cards').appendChild(card);});if(d.suggested){const el=document.querySelector('.route-card:not(.cant-fit)');if(el)el.click();}}
+async function loadUploadFolders(aid){const sel=$('folder-sel');sel.innerHTML='<option value="">Root</option>';try{const d=await api('GET',`/accounts/${aid}/tree`);function add(nodes,p=''){nodes.forEach(n=>{sel.innerHTML+=`<option value="${n.id}">${p}📁 ${n.name}</option>`;if(n.children?.length)add(n.children,p+'  ');});}add(d.tree.children||[]);const nl=nav.length?nav[nav.length-1]:null;if(nl?.accountId===aid&&nl.nodeId)sel.value=nl.nodeId;}catch(e){}}
+async function startUpload(){
+  if(!selectedRouteId){toast('Select an account first','err');return;}
+  const btn=$('up-go');btn.disabled=true;
+  const parentNodeId=$('folder-sel').value||null;
+  $('up-s2').style.display='none';$('up-s3').style.display='block';
+
+  // Build progress rows
+  $('up-prog-list').innerHTML='';
+  pendingUps.forEach((f,i)=>{
+    const ico=f.type.startsWith('video')?'🎬':f.type.startsWith('image')?'🖼️':f.type.startsWith('audio')?'🎵':'📄';
+    $('up-prog-list').innerHTML+=`
+      <div class="up-item" id="upi${i}">
+        <span style="font-size:14px">${ico}</span>
+        <div style="flex:1;min-width:0">
+          <div class="up-item-name" id="upin${i}">${f.name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <div class="up-prog" style="flex:1"><div class="up-prog-fill" id="upp${i}" style="width:0%"></div></div>
+            <span id="uppc${i}" style="font-size:10px;color:var(--muted2);white-space:nowrap;min-width:32px;text-align:right">0%</span>
+          </div>
+          <div id="upph${i}" style="font-size:10px;color:var(--muted);margin-top:2px">Waiting…</div>
+        </div>
+        <span style="font-size:10px;color:var(--muted2)">${fmtSz(f.size)}</span>
+      </div>`;
+  });
+
+  let ok=0, fail=0;
+
+  // Upload files one at a time (SSE per file)
+  for(let i=0;i<pendingUps.length;i++){
+    const f=pendingUps[i];
+    const phase1Max=50, phase2Max=100; // pct thresholds
+
+    const setBar=(pct,phase)=>{
+      const bar=$('upp'+i), pctEl=$('uppc'+i), phEl=$('upph'+i);
+      if(bar) bar.style.width=pct+'%';
+      if(pctEl) pctEl.textContent=pct+'%';
+      if(phEl){
+        if(pct<50)      phEl.textContent=`↑ Uploading to server… ${pct*2}%`;
+        else if(pct<100)phEl.textContent=`☁ Sending to Mega… ${Math.round((pct-50)*2)}%`;
+        else            phEl.textContent='✓ Complete';
+      }
+    };
+
+    setBar(0,'idle');
+    const nameEl=$('upin'+i);
+
+    try{
+      await new Promise((resolve,reject)=>{
+        const url=`${API}/accounts/${selectedRouteId}/upload${parentNodeId?'?parentNodeId='+parentNodeId:''}`;
+        const fd=new FormData();
+        fd.append('file',f,encodeURIComponent(f.name));
+
+        // Use fetch + ReadableStream to parse SSE
+        const ctrl=new AbortController();
+        let settled=false;
+
+        fetch(url,{
+          method:'POST',
+          headers:{'Authorization':`Bearer ${token}`},
+          body:fd,
+          signal:ctrl.signal
+        }).then(async resp=>{
+          if(!resp.ok){settled=true;return reject(new Error('HTTP '+resp.status));}
+          const reader=resp.body.getReader();
+          const dec=new TextDecoder();
+          let buf='';
+
+          while(true){
+            const {done,value}=await reader.read();
+            if(done) break;
+            buf+=dec.decode(value,{stream:true});
+            // parse SSE lines
+            const lines=buf.split('\n');
+            buf=lines.pop(); // keep incomplete line
+            for(const line of lines){
+              if(!line.startsWith('data:'))continue;
+              try{
+                const ev=JSON.parse(line.slice(5).trim());
+                if(ev.type==='progress'){
+                  setBar(ev.pct);
+                } else if(ev.type==='done'){
+                  setBar(100);
+                  if(!settled){settled=true;resolve(ev);}
+                } else if(ev.type==='error'){
+                  if(!settled){settled=true;reject(new Error(ev.error||'Upload failed'));}
+                }
+              }catch(_){}
+            }
+          }
+          if(!settled){settled=true;resolve({});}
+        }).catch(e=>{if(!settled){settled=true;reject(e);}});
+      });
+
+      if(nameEl)nameEl.style.color='var(--green)';
+      ok++;
+    }catch(e){
+      console.error('Upload error:',e.message);
+      if(nameEl)nameEl.style.color='var(--red)';
+      const phEl=$('upph'+i);if(phEl){phEl.textContent='❌ '+e.message;phEl.style.color='var(--red)';}
+      fail++;
+    }
+  }
+
+  $('up-done').style.display='flex';
+  toast(fail?`⚠️ ${ok} uploaded, ${fail} failed`:`✅ ${ok} file(s) uploaded`,'ok');
+  pendingUps=[];
+}
+
+// ══════════════════════════════════════════════
+// PROFILE PANEL
+// ══════════════════════════════════════════════
+const PROFILE_COLORS=['#00d4ff','#00e87a','#b06aff','#ff9d42','#ffd742','#ff4d6a','#00ffe0','#ff6eb4','#ffffff'];
+let selectedAvatarColor = '';
+async function openProfilePanel(){
+  // Refresh me from server
+  try{const d=await api('GET','/auth/me');me=d.user;localStorage.setItem('cv_me',JSON.stringify(me));}catch(e){}
+  const color=me?.avatarColor||'#00d4ff';selectedAvatarColor=color;
+  $('prof-avatar-big').style.background=color;$('prof-avatar-big').textContent=(me?.username||'?')[0].toUpperCase();
+  $('prof-username-big').textContent=me?.username||'—';$('prof-email-big').textContent=me?.email||'—';
+  $('prof-joined').textContent=me?.createdAt?`Joined ${fmtDate(me.createdAt)}`:'';
+  $('prof-name').value=me?.username||'';$('prof-bio').value=me?.bio||'';
+  // Color swatches
+  const sw=$('color-swatches');sw.innerHTML='';
+  PROFILE_COLORS.forEach(c=>{const el=document.createElement('div');el.className='swatch'+(c===color?' active':'');el.style.background=c;el.title=c;el.onclick=()=>{selectedAvatarColor=c;document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));el.classList.add('active');$('prof-avatar-big').style.background=c;};sw.appendChild(el);});
+  switchProfileTab('info');openPanel('profile-panel');
+}
+function switchProfileTab(t){
+  ['info','password','mega'].forEach(x=>{$('pt-'+x).style.display=x===t?'block':'none';});
+  document.querySelectorAll('.profile-tab').forEach((el,i)=>el.classList.toggle('active',['info','password','mega'][i]===t));
+  if(t==='mega')loadMegaCreds();
+  [$('proferr'),$('profok'),$('pwerr'),$('pwok')].forEach(el=>{if(el)el.style.display='none';});
+}
+async function saveProfile(){
+  const name=$('prof-name').value.trim(),bio=$('prof-bio').value,color=selectedAvatarColor;
+  const err=$('proferr'),ok=$('profok');err.style.display='none';ok.style.display='none';
+  try{await api('PATCH','/auth/profile',{username:name,bio,avatarColor:color});me={...me,username:name,bio,avatarColor:color};localStorage.setItem('cv_me',JSON.stringify(me));updateUserChip();$('prof-avatar-big').textContent=name[0]?.toUpperCase()||'?';$('prof-username-big').textContent=name;ok.textContent='✓ Profile saved!';ok.style.display='block';setTimeout(()=>ok.style.display='none',3000);}
+  catch(e){err.textContent=e.message;err.style.display='block';}
+}
+async function changePassword(){
+  const cur=$('pw-cur').value,nw=$('pw-new').value,conf=$('pw-conf').value;
+  const err=$('pwerr'),ok=$('pwok');err.style.display='none';ok.style.display='none';
+  if(!cur||!nw||!conf){err.textContent='All fields required';err.style.display='block';return;}
+  if(nw!==conf){err.textContent='New passwords do not match';err.style.display='block';return;}
+  try{await api('POST','/auth/change-password',{currentPassword:cur,newPassword:nw});ok.textContent='✓ Password changed!';ok.style.display='block';$('pw-cur').value='';$('pw-new').value='';$('pw-conf').value='';setTimeout(()=>ok.style.display='none',3000);}
+  catch(e){err.textContent=e.message;err.style.display='block';}
+}
+async function loadMegaCreds(){
+  const el=$('mega-creds-list');el.innerHTML='<div style="color:var(--muted2);font-size:13px;display:flex;align-items:center;gap:8px"><div class="spinner"></div> Loading…</div>';
+  if(!accounts.length){el.innerHTML='<p style="font-size:13px;color:var(--muted2)">No Mega accounts added yet.</p>';return;}
+  el.innerHTML='';
+  for(const a of accounts){
+    const color=a.color||aColor(a.id);
+    const div=document.createElement('div');div.className='cred-row';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:8px;height:8px;border-radius:50%;background:${color}"></div><strong style="font-family:'Cabinet Grotesk',sans-serif;font-size:13px;color:${color}">${a.alias}</strong><span class="sp sp-${a.status}" style="font-size:9px;padding:1px 6px">${a.status}</span></div><div class="cred-field"><span style="color:var(--muted2)">Email</span><span class="cred-val">${a.email}</span></div><div class="cred-field"><span style="color:var(--muted2)">Password</span><span class="cred-val" id="cpw-${a.id}" data-shown="0">••••••••••••</span><button class="cred-eye" onclick="toggleCred('${a.id}')" title="Show/hide password">👁</button></div>`;
+    el.appendChild(div);
+  }
+}
+async function toggleCred(id){
+  const el=$('cpw-'+id);if(!el)return;
+  if(el.dataset.shown==='1'){el.textContent='••••••••••••';el.dataset.shown='0';return;}
+  try{const d=await api('GET',`/accounts/${id}/credentials`);el.textContent=d.password;el.dataset.shown='1';}
+  catch(e){toast('❌ '+e.message,'err');}
+}
+
+// ACCOUNTS PANEL
+function renderAcctListUI(){
+  const el=$('acct-list-ui');el.innerHTML='';if(!accounts.length){el.innerHTML='<p style="font-size:13px;color:var(--muted2)">No accounts added yet.</p>';return;}
+  accounts.forEach(a=>{const color=a.color||aColor(a.id);const d=document.createElement('div');d.style.cssText='background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;display:flex;align-items:center;gap:9px';d.innerHTML=`<div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;background:${color}15;border:1px solid ${color}22;flex-shrink:0">☁️</div><div style="flex:1;min-width:0"><div style="font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:700;color:${color}">${a.alias}</div><div style="font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.email}</div></div><span class="sp sp-${a.status}" style="font-size:10px">${a.status}</span><button class="btn btn-ghost btn-sm" onclick="reconnectAcct('${a.id}')" style="padding:4px 7px">↻</button><button class="btn btn-danger btn-sm" onclick="removeAcct('${a.id}')" style="padding:4px 7px">✕</button>`;el.appendChild(d);});
+}
+async function addAccount(){
+  const alias=$('aa-alias').value.trim(),email=$('aa-email').value.trim(),pass=$('aa-pass').value,err=$('aaerr');err.style.display='none';
+  if(!email||!pass){err.textContent='Email and password required';err.style.display='block';return;}
+  const btn=$('aa-btn');btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Verifying…';
+  try{const d=await api('POST','/accounts',{email,password:pass,alias});accounts.push(d.account);$('aa-alias').value='';$('aa-email').value='';$('aa-pass').value='';renderAcctListUI();renderSBAccts();populateMkdirAcct();toast(`✅ ${d.account.alias} connected`,'ok');loadAllFiles();renderStorageInfo();}
+  catch(e){err.textContent=e.message;err.style.display='block';}
+  finally{btn.disabled=false;btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" width="13" height="13"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Connect Account';}
+}
+async function reconnectAcct(id){toast('🔄 Reconnecting…');try{await api('POST',`/accounts/${id}/connect`);await loadAccounts();toast('✅ Reconnected','ok');renderStorageInfo();}catch(e){toast('❌ '+e.message,'err');}}
+async function removeAcct(id){if(!confirm('Remove this account? Your Mega data stays untouched.'))return;try{await api('DELETE',`/accounts/${id}`);accounts=accounts.filter(a=>a.id!==id);renderAcctListUI();renderSBAccts();populateMkdirAcct();allFiles=allFiles.filter(f=>f.accountId!==id);applyFilter();toast('Account removed','ok');}catch(e){toast('❌ '+e.message,'err');}}
+function openAcctPanel(){openPanel('acct-panel');renderAcctListUI();populateMkdirAcct();}
+// badges
+const spClass={ready:'background:rgba(0,232,122,.12);color:var(--green)',connecting:'background:rgba(255,157,66,.12);color:var(--orange)',error:'background:rgba(255,77,106,.12);color:var(--red)',disconnected:'background:var(--s3);color:var(--muted2)'};
+
+// PANELS
+function openPanel(id){$(id).classList.add('open');}
+function closePanel(id){$(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');}));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closePlayer();document.querySelectorAll('.overlay.open').forEach(el=>el.classList.remove('open'));}
+  if((e.ctrlKey||e.metaKey)&&e.key==='a'){e.preventDefault();filteredFiles.forEach(f=>selectedIds.add(f.id));renderFiles(filteredFiles);}
+  if(e.key==='Delete'&&selectedIds.size>0&&!document.querySelector('.overlay.open'))bulkDelete();
+});
+$('lp')?.addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
+$('lu')?.addEventListener('keydown',e=>e.key==='Enter'&&$('lp').focus());
+$('rp')?.addEventListener('keydown',e=>e.key==='Enter'&&doRegister());
+$('md-name')?.addEventListener('keydown',e=>e.key==='Enter'&&doMkdir());
+$('rn-name')?.addEventListener('keydown',e=>e.key==='Enter'&&doRename());
+$('aa-pass')?.addEventListener('keydown',e=>e.key==='Enter'&&addAccount());
+$('pw-conf')?.addEventListener('keydown',e=>e.key==='Enter'&&changePassword());
+
+if(token&&me)bootApp();
+</script>
+</body>
+</html>
